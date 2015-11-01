@@ -1,4 +1,4 @@
-![](https://raw.githubusercontent.com/schevla/sierpinski/master/sierpinski1_3_s.png)
+![](https://raw.githubusercontent.com/schevla/sierpinski/master/sierpinski1_3_small.png)
 
 Sierpinski Python Scripts
 =======================
