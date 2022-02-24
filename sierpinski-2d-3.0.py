@@ -1,55 +1,59 @@
 import bpy
 import math
 
-# object name
-name = 'Tri'
-# set number of iterations
-iter = 1  # 8
-
-# http://i-want-to-study-engineering.org/images/tetrahedron_height_s.png
-# grab object critical dimensions (assumes Tri is on xy plane with edge along x-axis)
-unit_len = bpy.data.objects[name].dimensions[0]
-t_h = math.sqrt(3) / 2
-p_d = math.sqrt(3) / 6
 p_h = math.sqrt(2 / 3)
 
-# set 3D cursor at center
-bpy.context.scene.cursor.location = (0, 0, 0)
+def triangle(name, scale, edges=[], faces=[]):
+    coords = [
+        (0, 0, 0),
+        (scale, 0, 0),
+        (scale / 2, scale * p_h ,0)
+    ]
+    faces = [
+        (0,1,2)
+    ]
 
-# duplicate & hide copy of  object
-sel_obj = bpy.data.objects[name]
-#bpy.context.view_layer.objects.active = sel_obj
-bpy.data.objects[name].select_set(True)
-bpy.ops.object.duplicate_move()
-bpy.context.selected_objects[0].name = name + '_backup'
-bpy.data.objects[name].select_set(False)
+    # Create new mesh and a new object
+    mesh = bpy.data.meshes.new(f'{name}-Mesh')
+    obj = bpy.data.objects.new(name, mesh)
 
-sel_col = bpy.context.view_layer.layer_collection.children['orig']
-bpy.context.view_layer.active_layer_collection.collection = sel_col
-#bpy.context.scene.collection.objects.link(sel_obj)
+    # Make a mesh from a list of vertices/edges/faces
+    mesh.from_pydata(coords, edges, faces)
 
-bpy.ops.collection.objects_remove_all()
+    # Display name and update the mesh
+    obj.show_name = True
+    mesh.update()
+    return obj
 
-# loop
-for i in range(0, iter):
+# Create the object
+tri = triangle('Tri', 1)
 
-    # define move parameters
-    base = 2 ** i
+# Link object to the active collection
+bpy.context.collection.objects.link(tri)
 
-    # move one unit in x-direction
-    #bpy.data.objects[name].select_set(True)
-    #bpy.ops.object.duplicate_move(TRANSFORM_OT_translate={"value": (unit_len * base, 0, 0)})
-    #bpy.ops.object.select_all(action='TOGGLE')
+# Alternatively Link object to scene collection
+#bpy.context.scene.collection.objects.link(tri)
 
-    # move one unit in tri-direction
-    #bpy.data.objects[name].select_set(True)
-    #bpy.ops.object.duplicate_move(TRANSFORM_OT_translate={"value": (0.5 * unit_len * base, t_h * unit_len * base, 0)})
-    #bpy.ops.object.select_all(action='TOGGLE')
+# Try a second object
+tri2 = bpy.data.objects.new('Tri2', bpy.data.objects['Tri'].data)
+tri2.location = (1,0,0)
+bpy.context.collection.objects.link(tri2)
 
-    # join transformation objects and reset name
-    #bpy.context.view_layer.objects.active = bpy.data.objects[name]
-    #bpy.ops.object.select_all(action='TOGGLE')
-    #bpy.ops.object.join()
-  
-# set the origin to 3D cursor location
-bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+
+###########
+## BEGIN ##
+###########
+
+# create base triangle
+
+# deselect triangle
+
+# iterations
+
+    # set base transform
+    
+    # duplicate/move the "object" in x-direction
+    
+    # duplicate/move the "object" on tri-direction
+    
+    # join all objects as "object"

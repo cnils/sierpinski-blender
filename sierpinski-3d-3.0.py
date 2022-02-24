@@ -37,7 +37,7 @@ for i in range(0,iter):
     bpy.data.objects[name].select = True
     bpy.ops.object.duplicate_move(TRANSFORM_OT_translate={"value":(0.5 * unit_len * base, t_h * unit_len * base, 0)})
     bpy.ops.object.select_all(action='TOGGLE')
-    
+
     # move one unit in tet-direction
     bpy.data.objects[name].select = True
     bpy.ops.object.duplicate_move(TRANSFORM_OT_translate={"value":(0.5 * unit_len * base, p_d * unit_len * base, p_h * unit_len * base)})
@@ -47,6 +47,6 @@ for i in range(0,iter):
     bpy.context.scene.objects.active = bpy.data.objects[name]
     bpy.ops.object.select_all(action='TOGGLE')
     bpy.ops.object.join()
-  
+
 # set the origin to 3D cursor location
 bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
