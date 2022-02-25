@@ -1,59 +1,84 @@
 import bpy
 import math
 
-p_h = math.sqrt(2 / 3)
+# pre-calculated lengths
+t_h = math.sqrt(3) / 2
 
+
+# triangle function
 def triangle(name, scale, edges=[], faces=[]):
+    # shape components
     coords = [
         (0, 0, 0),
         (scale, 0, 0),
-        (scale / 2, scale * p_h ,0)
+        (scale / 2, scale * t_h ,0)
     ]
     faces = [
-        (0,1,2)
+        (0, 1, 2)
     ]
 
-    # Create new mesh and a new object
+    # create new mesh and new object
     mesh = bpy.data.meshes.new(f'{name}-Mesh')
     obj = bpy.data.objects.new(name, mesh)
 
-    # Make a mesh from a list of vertices/edges/faces
+    # make mesh from shape components
     mesh.from_pydata(coords, edges, faces)
 
-    # Display name and update the mesh
-    obj.show_name = True
+    # show name and update the mesh
+    #obj.show_name = True
     mesh.update()
+    
+    # link object to active collection
+    bpy.context.collection.objects.link(obj)
+    
     return obj
 
-# Create the object
-tri = triangle('Tri', 1)
 
-# Link object to the active collection
-bpy.context.collection.objects.link(tri)
-
-# Alternatively Link object to scene collection
-#bpy.context.scene.collection.objects.link(tri)
-
-# Try a second object
-tri2 = bpy.data.objects.new('Tri2', bpy.data.objects['Tri'].data)
-tri2.location = (1,0,0)
-bpy.context.collection.objects.link(tri2)
+def duplicate_move(obj, suffix, new_location):
+    # duplicate object
+    obj2 = bpy.data.objects.new(obj.name + suffix, obj.data)
+    
+    # move object
+    obj2.location = new_location
+    
+    # link object to active collection
+    bpy.context.collection.objects.link(obj2)
+    
+    return obj2
 
 
 ###########
 ## BEGIN ##
 ###########
 
-# create base triangle
+# set iterations
+iter = 8
 
-# deselect triangle
+# set sizes
+size = 10
+unit = size / 2 ** iter
+
+# create base triangle
+tri = triangle('Tri', unit)
 
 # iterations
+for i in range(iter):
 
     # set base transform
+    base = 2 ** i
+    
+    # set tri
+    tri = bpy.data.objects['Tri']
     
     # duplicate/move the "object" in x-direction
+    tri_x = duplicate_move(tri, '-X', (base * unit, 0, 0))
+    tri_x.select_set(state=True)
     
     # duplicate/move the "object" on tri-direction
+    tri_t = duplicate_move(tri, '-T', (0.5 * base * unit, t_h * base * unit, 0))
+    tri_t.select_set(state=True)
     
     # join all objects as "object"
+    tri.select_set(state=True)
+    bpy.context.view_layer.objects.active = tri
+    bpy.ops.object.join()
