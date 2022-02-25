@@ -1,17 +1,21 @@
 import bpy
 import math
+from mathutils import Vector
 
 # pre-calculated lengths
 t_h = math.sqrt(3) / 2
+t_d = math.sqrt(3) / 3
 
 
 # triangle function
-def triangle(name, scale, edges=[], faces=[]):
+def triangle(name, scale, origin=Vector((0, 0, 0))):
     # shape components
     coords = [
-        (0, 0, 0),
-        (scale, 0, 0),
-        (scale / 2, scale * t_h ,0)
+        origin + Vector((0, 0, 0)),
+        origin + Vector((scale, 0, 0)),
+        origin + Vector((scale / 2, scale * t_h ,0))
+    ]
+    edges = [
     ]
     faces = [
         (0, 1, 2)
@@ -25,7 +29,6 @@ def triangle(name, scale, edges=[], faces=[]):
     mesh.from_pydata(coords, edges, faces)
 
     # show name and update the mesh
-    #obj.show_name = True
     mesh.update()
     
     # link object to active collection
@@ -34,12 +37,12 @@ def triangle(name, scale, edges=[], faces=[]):
     return obj
 
 
-def duplicate_move(obj, suffix, new_location):
+def duplicate_move(obj, suffix, translate):
     # duplicate object
     obj2 = bpy.data.objects.new(obj.name + suffix, obj.data)
     
     # move object
-    obj2.location = new_location
+    obj2.location += translate
     
     # link object to active collection
     bpy.context.collection.objects.link(obj2)
@@ -52,14 +55,19 @@ def duplicate_move(obj, suffix, new_location):
 ###########
 
 # set iterations
-iter = 8
+iter = 8  # 8
 
 # set sizes
 size = 10
 unit = size / 2 ** iter
+merge_threshold = unit / 2
+
+# offset 3d cursor
+curs = bpy.context.scene.cursor.location
+offset = curs + Vector((-size / 2, -t_d * size / 2, 0))
 
 # create base triangle
-tri = triangle('Tri', unit)
+tri = triangle('Tri', unit, offset)
 
 # iterations
 for i in range(iter):
@@ -71,14 +79,20 @@ for i in range(iter):
     tri = bpy.data.objects['Tri']
     
     # duplicate/move the "object" in x-direction
-    tri_x = duplicate_move(tri, '-X', (base * unit, 0, 0))
+    tri_x = duplicate_move(tri, '-X', Vector((base * unit, 0, 0)))
     tri_x.select_set(state=True)
     
     # duplicate/move the "object" on tri-direction
-    tri_t = duplicate_move(tri, '-T', (0.5 * base * unit, t_h * base * unit, 0))
+    tri_t = duplicate_move(tri, '-T', Vector((0.5 * base * unit, t_h * base * unit, 0)))
     tri_t.select_set(state=True)
     
     # join all objects as "object"
     tri.select_set(state=True)
     bpy.context.view_layer.objects.active = tri
     bpy.ops.object.join()
+    
+# clean up extra vertices
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.mesh.remove_doubles(threshold=merge_threshold)
+bpy.ops.object.mode_set(mode='OBJECT')
