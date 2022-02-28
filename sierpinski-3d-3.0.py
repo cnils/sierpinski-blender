@@ -1,52 +1,108 @@
 import bpy
 import math
+from mathutils import Vector
 
-# object name
-name = 'Tet'
-# set number of iterations
-iter = 1  # 4198144 tris?
+# pre-calculated proportions
+tri_h = math.sqrt(3) / 2  # edge to top
+tri_c = math.sqrt(3) / 3  # edge to center
+tet_v = math.sqrt(3) / 6  # edge to face center for vertex above
+tet_h = math.sqrt(2 / 3)  # face to top
+tet_c = math.sqrt(3 / 8)  # face to center
 
-# http://i-want-to-study-engineering.org/images/tetrahedron_height_s.png
-# grab object critical dimensions (assumes Tet is on xy plane with edge along x-axis)
-unit_len = bpy.data.objects[name].dimensions[0]
-t_h = math.sqrt(3)/2
-p_d = math.sqrt(3)/6
-p_h = math.sqrt(2/3)
+# triangle function
+def tetrahedron(name, scale, origin=Vector((0, 0, 0))):
+    # shape components
+    coords = [
+        origin + Vector((0, 0, 0)),
+        origin + Vector((scale, 0, 0)),
+        origin + Vector((scale / 2, scale * tri_h, 0)),
+        origin + Vector((scale / 2, scale * tet_v, scale * tet_h))
+    ]
+    edges = [
+    ]
+    faces = [
+        (0, 1, 2),
+        (0, 1, 3),
+        (0, 2, 3),
+        (1, 2, 3)
+    ]
 
-# set 3D cursor at center
-bpy.context.scene.cursor.location = (0,0,0)
+    # create new mesh and new object
+    mesh = bpy.data.meshes.new(f'{name}-mesh')
+    obj = bpy.data.objects.new(name, mesh)
 
-# duplicate & hide copy of  object
-bpy.data.objects[name].select_set(True)
-bpy.ops.object.duplicate_move()
-bpy.context.selected_objects[0].name = 'backup'
-bpy.ops.object.move_to_layer(layers=(False, False, False, False, False, False, False, False, False, False, False, True, False, False, False, False, False, False, False, False))
+    # make mesh from shape components
+    mesh.from_pydata(coords, edges, faces)
 
-# loop
-for i in range(0,iter):
+    # show name and update the mesh
+    mesh.update()
 
-    # define move parameters
-    base = 2**(i)
+    # link object to active collection
+    bpy.context.collection.objects.link(obj)
 
-    # move one unit in x-direction
-    bpy.data.objects[name].select = True
-    bpy.ops.object.duplicate_move(TRANSFORM_OT_translate={"value":(unit_len * base, 0, 0)})
-    bpy.ops.object.select_all(action='TOGGLE')
+    return obj
 
-    # move one unit in tri-direction
-    bpy.data.objects[name].select = True
-    bpy.ops.object.duplicate_move(TRANSFORM_OT_translate={"value":(0.5 * unit_len * base, t_h * unit_len * base, 0)})
-    bpy.ops.object.select_all(action='TOGGLE')
 
-    # move one unit in tet-direction
-    bpy.data.objects[name].select = True
-    bpy.ops.object.duplicate_move(TRANSFORM_OT_translate={"value":(0.5 * unit_len * base, p_d * unit_len * base, p_h * unit_len * base)})
-    bpy.ops.object.select_all(action='TOGGLE')
+def duplicate_move(obj, suffix, translate):
+    # duplicate object
+    obj2 = bpy.data.objects.new(obj.name + suffix, obj.data)
 
-    # join transformation objects and reset name
-    bpy.context.scene.objects.active = bpy.data.objects[name]
-    bpy.ops.object.select_all(action='TOGGLE')
+    # move object
+    obj2.location += translate
+
+    # link object to active collection
+    bpy.context.collection.objects.link(obj2)
+
+    return obj2
+
+
+###########
+## BEGIN ##
+###########
+
+# set iterations
+iter = 8  # 8
+
+# set sizes
+size = 10
+unit = size / 2 ** iter
+merge_threshold = unit / 2
+
+# offset 3d cursor
+curs = bpy.context.scene.cursor.location
+offset = curs + Vector((-size / 2, -size * tri_c / 2, -size * tet_c / 2))
+
+# create base triangle
+tet = tetrahedron('Tet', unit, offset)
+
+# iterations
+for i in range(iter):
+
+    # set base transform
+    base = 2 ** i
+
+    # set tri
+    tet = bpy.data.objects['Tet']
+
+    # duplicate/move the "object" in x-direction
+    tet_x = duplicate_move(tet, '-X', Vector((base * unit, 0, 0)))
+    tet_x.select_set(state=True)
+
+    # duplicate/move the "object" on tri-direction
+    tet_t = duplicate_move(tet, '-TRI', Vector((base * unit / 2, base * unit * tri_h, 0)))
+    tet_t.select_set(state=True)
+
+    # duplicate/move the "object" on tet-direction
+    tet_tt = duplicate_move(tet, '-TET', Vector((base * unit / 2, base * unit * tet_v, base * unit * tet_h)))
+    tet_tt.select_set(state=True)
+
+    # join all objects as "object"
+    tet.select_set(state=True)
+    bpy.context.view_layer.objects.active = tet
     bpy.ops.object.join()
 
-# set the origin to 3D cursor location
-bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+# clean up extra vertices
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.mesh.remove_doubles(threshold=merge_threshold)
+bpy.ops.object.mode_set(mode='OBJECT')
