@@ -44,7 +44,7 @@ def newShader(id, type, r, g, b):
     return mat
 
 # select random faces and apply change
-def random_faces(mat, ratio=0.5):
+def random_faces(mat, ratio=0.5, expand=False):
     # enter edit mode for selected object
     mesh = bpy.context.active_object.data
     bpy.ops.object.mode_set(mode='EDIT')
@@ -66,6 +66,8 @@ def random_faces(mat, ratio=0.5):
         chosen += 1
         
     # do stuff to selected faces...
+    if expand:
+        bpy.ops.mesh.select_more()
     ix = [i for i, m in enumerate(bpy.context.object.material_slots) if m.name == mat.name]
     bpy.context.object.active_material_index = ix[0]
     bpy.ops.object.material_slot_assign()
@@ -76,4 +78,4 @@ def random_faces(mat, ratio=0.5):
 # assign emission material to the object
 mat = newShader('lights', 'emission', 1, 1, 1)
 bpy.context.active_object.data.materials.append(mat)
-random_faces(mat, 0.1)
+random_faces(mat, ratio=0.02, expand=True)

@@ -92,6 +92,7 @@ for i in range(iter):
     bpy.ops.object.join()
 
 # clean up extra vertices
+# disable this for bpy.ops.mesh.select_more() to color entire tris (vs sides)
 bpy.ops.object.mode_set(mode='EDIT')
 bpy.ops.mesh.select_all(action='SELECT')
 bpy.ops.mesh.remove_doubles(threshold=merge_threshold)
