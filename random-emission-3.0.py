@@ -50,13 +50,15 @@ def random_faces(mat, ratio=0.5):
     bpy.ops.object.mode_set(mode='EDIT')
     bm = bmesh.from_edit_mesh(mesh)
 
+    # select random proportion of faces
+    # can use bpy.ops.mesh.select_random(ratio=0.1), but will hinder
+    # selections (multiple) where needing to track faces already selected
     for f in bm.faces:
         f.select_set(False)
         
     faces = set(bm.faces)
     chosen = 0
 
-    # select random proportion of faces
     while faces and (chosen / len(bm.faces)) < ratio:
         face = choice(list(faces))
         face.select_set(True)
